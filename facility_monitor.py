@@ -176,17 +176,27 @@ def google_sso_login(page) -> None:
     # ── Step 2: Google email ──
     if "accounts.google.com" in page.url:
         log.info("Filling in Google email …")
+        page.screenshot(path="debug_step2_email.png")
         page.wait_for_selector("input[type='email']", timeout=15_000)
         page.fill("input[type='email']", GOOGLE_EMAIL)
         page.click("#identifierNext, button:has-text('Next')")
 
-        # ── Step 3: Google password ──
-        # Wait for the password field to be visible (not just present in DOM)
-        log.info("Waiting for password field …")
-        page.wait_for_selector("input[type='password']:visible", timeout=20_000)
-        page.wait_for_timeout(1000)  # small extra pause for animations
-        page.fill("input[type='password']", GOOGLE_PASSWORD)
-        page.click("#passwordNext, button:has-text('Next')")
+        # Wait for next page to load fully
+        page.wait_for_load_state("networkidle", timeout=15_000)
+        page.screenshot(path="debug_step3_after_email.png")
+        log.info("After email page URL: %s", page.url)
+
+        # ── Step 3: password OR another SSO redirect ──
+        # Check if we're still on Google or redirected elsewhere
+        if "accounts.google.com" in page.url:
+            log.info("Still on Google — filling in password …")
+            page.wait_for_selector("input[type='password']:visible", timeout=20_000)
+            page.wait_for_timeout(1000)
+            page.fill("input[type='password']", GOOGLE_PASSWORD)
+            page.click("#passwordNext, button:has-text('Next')")
+        else:
+            log.info("Redirected to: %s — may need manual login", page.url)
+            page.screenshot(path="debug_step3_redirect.png")
 
     # ── Wait for redirect back to portal ──
     try:
