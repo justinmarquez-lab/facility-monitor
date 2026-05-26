@@ -181,7 +181,10 @@ def google_sso_login(page) -> None:
         page.click("#identifierNext, button:has-text('Next')")
 
         # ── Step 3: Google password ──
-        page.wait_for_selector("input[type='password']", timeout=15_000)
+        # Wait for the password field to be visible (not just present in DOM)
+        log.info("Waiting for password field …")
+        page.wait_for_selector("input[type='password']:visible", timeout=20_000)
+        page.wait_for_timeout(1000)  # small extra pause for animations
         page.fill("input[type='password']", GOOGLE_PASSWORD)
         page.click("#passwordNext, button:has-text('Next')")
 
